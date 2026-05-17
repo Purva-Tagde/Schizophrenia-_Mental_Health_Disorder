@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroMind AI — Schizophrenia Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a14;
+    --paper: #f5f0eb;
+    --mint: #00d4a0;
+    --mint-dim: #00a87e;
+    --blush: #ff6b8a;
+    --violet: #7c5cfc;
+    --card-bg: #ffffff;
+    --muted: #64607a;
+    --border: rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--mint);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.15s ease;
+    mix-blend-mode: multiply;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--violet);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9998;
+    transition: all 0.08s ease;
+    mix-blend-mode: multiply;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9000;
+    opacity: 0.4;
+  }
+
+  /* NAVBAR */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 56px;
+    background: rgba(245, 240, 235, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--ink);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 100px;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover, .nav-links a.active {
+    background: var(--ink);
+    color: white;
+  }
+
+  .nav-cta {
+    background: var(--mint) !important;
+    color: var(--ink) !important;
+    font-weight: 600 !important;
+  }
+  .nav-cta:hover {
+    background: var(--mint-dim) !important;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 80px;
+    overflow: hidden;
+  }
+
+  .hero-left {
+    padding: 100px 56px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 36px;
+    width: fit-content;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .badge-dot {
+    width: 8px; height: 8px;
+    background: var(--mint);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(44px, 5vw, 72px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--mint-dim);
+  }
+
+  .hero h1 .stroke-text {
+    -webkit-text-stroke: 2px var(--ink);
+    color: transparent;
+  }
+
+  .hero-sub {
+    margin-top: 28px;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 420px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-actions {
+    margin-top: 44px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: white;
+    padding: 16px 32px;
+    border-radius: 100px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--mint);
+    transform: translateX(-101%);
+    transition: transform 0.3s ease;
+    z-index: 0;
+  }
+
+  .btn-primary:hover::after { transform: translateX(0); }
+  .btn-primary:hover { color: var(--ink); }
+  .btn-primary span { position: relative; z-index: 1; }
+  .btn-primary:hover .arrow { transform: translateX(4px); }
+  .arrow { transition: transform 0.3s; }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .btn-ghost:hover { color: var(--ink); }
+
+  .hero-stats {
+    margin-top: 64px;
+    display: flex;
+    gap: 40px;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+
+  .stat-item { }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* HERO RIGHT - visual */
+  .hero-right {
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brain-visual {
+    position: relative;
+    width: 380px;
+    height: 380px;
+  }
+
+  .brain-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: rotate 20s linear infinite;
+  }
+
+  .ring-1 { inset: 0; }
+  .ring-2 { inset: 30px; animation-duration: 28s; animation-direction: reverse; border-color: rgba(0,212,160,0.15); }
+  .ring-3 { inset: 60px; animation-duration: 16s; border-color: rgba(124,92,252,0.15); }
+
+  @keyframes rotate { to { transform: rotate(360deg); } }
+
+  .ring-dots {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    animation: rotate 20s linear infinite;
+  }
+
+  .ring-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    background: var(--mint);
+    border-radius: 50%;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 12px var(--mint);
+  }
+
+  .ring-dot-2 {
+    background: var(--blush);
+    box-shadow: 0 0 12px var(--blush);
+    top: 50%; left: 100%;
+    transform: translateY(-50%);
+    animation: rotate 28s linear infinite reverse;
+  }
+
+  .brain-center {
+    position: absolute;
+    inset: 90px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 72px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 0 60px rgba(0,212,160,0.15), inset 0 0 30px rgba(124,92,252,0.1);
+  }
+
+  .floating-cards {
+    position: absolute;
+    inset: 0;
+  }
+
+  .float-card {
+    position: absolute;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 14px 18px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .float-card:nth-child(1) { top: 15%; right: 8%; animation-delay: 0s; }
+  .float-card:nth-child(2) { bottom: 20%; left: 5%; animation-delay: 2s; }
+  .float-card:nth-child(3) { top: 55%; right: 5%; animation-delay: 4s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .fc-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+  .fc-value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+  .fc-mint { color: var(--mint); }
+  .fc-blush { color: var(--blush); }
+
+  /* FEATURES */
+  .features {
+    padding: 120px 56px;
+  }
+
+  .section-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--mint-dim);
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    max-width: 540px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 60px;
+  }
+
+  .feature-card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--mint), var(--violet));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+  }
+
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.08); }
+  .feature-card:hover::before { transform: scaleX(1); }
+
+  .feat-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .feat-icon.mint { background: rgba(0,212,160,0.12); }
+  .feat-icon.violet { background: rgba(124,92,252,0.12); }
+  .feat-icon.blush { background: rgba(255,107,138,0.12); }
+
+  .feature-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  /* HOW IT WORKS */
+  .how {
+    padding: 80px 56px 120px;
+    background: var(--ink);
+    color: white;
+    border-radius: 32px;
+    margin: 0 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .how::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(0,212,160,0.08), transparent 70%);
+    pointer-events: none;
+  }
+
+  .how .section-label { color: var(--mint); }
+  .how .section-title { color: white; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+    margin-top: 60px;
+    position: relative;
+  }
+
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 30px; left: 16.6%; right: 16.6%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), rgba(0,212,160,0.3), rgba(255,255,255,0.1), transparent);
+  }
+
+  .step { position: relative; }
+
+  .step-num {
+    width: 60px; height: 60px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--mint);
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .step p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* CTA SECTION */
+  .cta-section {
+    padding: 120px 56px;
+    text-align: center;
+    position: relative;
+  }
+
+  .cta-section .section-title {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .cta-section p {
+    margin: 20px auto 0;
+    max-width: 440px;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 40px;
+  }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+    padding: 14px 28px;
+    border-radius: 100px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-outline:hover { border-color: var(--ink); background: var(--ink); color: white; }
+
+  /* FOOTER */
+  footer {
+    padding: 32px 56px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  footer p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAVBAR -->
+<nav>
+  <a class="logo" href="/">
+    <div class="logo-icon">🧠</div>
+    NeuroMind
+  </a>
+  <ul class="nav-links">
+    <li><a href="/" class="active">Home</a></li>
+    <li><a href="/analysis">Analysis</a></li>
+    <li><a href="/hospitals">Hospitals</a></li>
+    <li><a href="/analysis" class="nav-cta">Start Analysis →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      AI-Powered Mental Health Platform
+    </div>
+
+    <h1>
+      Detect Risk.<br>
+      <em>Support</em> Lives.<br>
+      <span class="stroke-text">Act Early.</span>
+    </h1>
+
+    <p class="hero-sub">
+      A machine learning platform that predicts schizophrenia risk from clinical indicators and connects patients with the right medical support.
+    </p>
+
+    <div class="hero-actions">
+      <a href="/analysis" class="btn-primary">
+        <span>Begin Analysis</span>
+        <span class="arrow">→</span>
+      </a>
+      <a href="/hospitals" class="btn-ghost">
+        🏥 View Hospitals
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">94%</div>
+        <div class="stat-label">Detection Accuracy</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2min</div>
+        <div class="stat-label">Quick Assessment</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">50+</div>
+        <div class="stat-label">Hospitals Listed</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="brain-visual">
+      <div class="brain-ring ring-1"></div>
+      <div class="brain-ring ring-2"></div>
+      <div class="brain-ring ring-3"></div>
+      <div class="ring-dots">
+        <div class="ring-dot"></div>
+      </div>
+      <div class="ring-dots" style="animation-duration:28s;animation-direction:reverse;">
+        <div class="ring-dot ring-dot-2"></div>
+      </div>
+      <div class="brain-center">🧠</div>
+    </div>
+
+    <div class="floating-cards">
+      <div class="float-card">
+        <div class="fc-label">Risk Score</div>
+        <div class="fc-value fc-mint">23%</div>
+      </div>
+      <div class="float-card">
+        <div class="fc-label">Status</div>
+        <div class="fc-value" style="color:white;">Low Risk</div>
+      </div>
+      <div class="float-card">
+        <div class="fc-label">Confidence</div>
+        <div class="fc-value fc-blush">91%</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="section-label">What We Offer</div>
+  <h2 class="section-title">Intelligent tools for early detection</h2>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feat-icon mint">🤖</div>
+      <h3>ML Risk Prediction</h3>
+      <p>Our trained model analyzes clinical behavioral markers to generate a precise schizophrenia risk score in seconds.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon violet">📊</div>
+      <h3>Visual Probability Dashboard</h3>
+      <p>Beautifully designed risk charts and probability breakdowns make clinical data easy to interpret.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon blush">🏥</div>
+      <h3>Hospital Directory</h3>
+      <p>Instantly connect with rated mental health facilities nearby, categorized by care level and specialization.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section style="padding: 0 32px 80px;">
+  <div class="how">
+    <div class="section-label">The Process</div>
+    <h2 class="section-title">Three steps to a clearer picture</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h4>Enter Patient Details</h4>
+        <p>Input age and key behavioral symptoms including fatigue, movement, hygiene, and pain levels.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h4>AI Analyzes Risk</h4>
+        <p>Our machine learning model processes the inputs and calculates a risk probability score instantly.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h4>Get Guidance</h4>
+        <p>Receive tailored suggestions and connect with nearby mental health hospitals for proper care.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="section-label">Ready to begin?</div>
+  <h2 class="section-title">Take the first step toward early care</h2>
+  <p>Early detection of schizophrenia can dramatically improve treatment outcomes. Our tool is fast, private, and free.</p>
+
+  <div class="cta-actions">
+    <a href="/analysis" class="btn-primary">
+      <span>Start Analysis Now</span>
+      <span class="arrow">→</span>
+    </a>
+    <a href="/hospitals" class="btn-outline">Find Hospitals</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo" style="font-size:16px;">
+    <div class="logo-icon">🧠</div> NeuroMind
+  </div>
+  <p>Built to support mental health detection & care.</p>
+  <p style="font-size:12px;">© 2025 NeuroMind. All rights reserved.</p>
+</footer>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx - 6 + 'px';
+    cursor.style.top = my - 6 + 'px';
+  });
+
+  function animateRing() {
+    rx += (mx - rx - 18) * 0.12;
+    ry += (my - ry - 18) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+</script>
+</body>
+</html>
